@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Sistema de citas médicas</title>
+
+    <style>
+      /* Diseño general de la página */
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #f1f5f9;
+        color: #1e293b;
+      }
+
+      /* Encabezado */
+      header {
+        background-color: #0f766e;
+        color: white;
+        padding: 25px;
+        text-align: center;
+      }
+
+      /* Menú de navegación */
+      nav {
+        background-color: #115e59;
+        padding: 15px;
+        text-align: center;
+      }
+
+      nav a {
+        color: white;
+        text-decoration: none;
+        margin: 0 12px;
+        font-weight: bold;
+      }
+
+      nav a:hover {
+        text-decoration: underline;
+      }
+
+      /* Contenido principal */
+      main {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 20px;
+      }
+
+      /* Tarjetas de opciones */
+      .contenedor {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+      }
+
+      .tarjeta {
+        background-color: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .tarjeta h3 {
+        color: #0f766e;
+      }
+
+      .boton {
+        display: inline-block;
+        background-color: #0f766e;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 5px;
+        text-decoration: none;
+      }
+
+      .boton:hover {
+        background-color: #115e59;
+      }
+
+      /* Pie de página */
+      footer {
+        text-align: center;
+        padding: 20px;
+        color: #64748b;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Sistema de citas médicas</h1>
+      <p>Administra la información y los servicios médicos</p>
+    </header>
+
+    <nav>
+      <a href="index.html">Inicio</a>
+      <a href="registro.html">Registrar paciente</a>
+      <a href="login.html">Iniciar sesión</a>
+    </nav>
+
+    <main>
+      <h2 id="saludo">Bienvenido al sistema</h2>
+
+      <p>
+        Desde esta página podrás acceder a las diferentes funcionalidades del
+        sistema de citas médicas.
+      </p>
+
+      <div class="contenedor">
+        <div class="tarjeta">
+          <h3>Registro de pacientes</h3>
+          <p>Registra los datos de los pacientes en el sistema.</p>
+          <a href="registro.html" class="boton"> Registrar paciente </a>
+        </div>
+
+        <div class="tarjeta">
+          <h3>Inicio de sesión</h3>
+          <p>Ingresa al sistema con tu correo y contraseña.</p>
+          <a href="login.html" class="boton"> Iniciar sesión </a>
+        </div>
+
+        <div class="tarjeta">
+          <h3>Médicos</h3>
+          <p>Este módulo permitirá organizar la información de los médicos.</p>
+          <span>Próximamente</span>
+        </div>
+
+        <div class="tarjeta">
+          <h3>Citas médicas</h3>
+          <p>Este módulo permitirá gestionar las citas de los pacientes.</p>
+          <span>Próximamente</span>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <p>Proyecto académico - Gestión de citas médicas</p>
+    </footer>
+
+    <script>
+      // Obtener el nombre guardado durante el inicio de sesión
+      const nombrePaciente = sessionStorage.getItem("nombrePaciente");
+
+      // Mostrar el nombre del paciente
+      if (nombrePaciente) {
+        document.getElementById("saludo").textContent =
+          "Bienvenido, " + nombrePaciente;
+      }
+    </script>
+  </body>
+</html>
