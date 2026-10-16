@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Médicos | Proyecto Citas</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        background: #f0fdfa;
+        color: #1f2937;
+        padding: 25px;
+      }
+
+      header {
+        background: #0f766e;
+        color: white;
+        padding: 22px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+      }
+
+      header h1 {
+        margin-bottom: 8px;
+      }
+
+      .contenedor {
+        max-width: 1000px;
+        margin: auto;
+      }
+
+      .tarjeta {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 12px #0000000d;
+      }
+
+      h2 {
+        color: #0f766e;
+        margin-bottom: 20px;
+      }
+
+      .formulario {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .campo {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      .campo label {
+        font-weight: bold;
+      }
+
+      .campo input {
+        padding: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 15px;
+      }
+
+      .campo input:focus {
+        outline: 2px solid #99f6e4;
+        border-color: #0f766e;
+      }
+
+      .botones {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+      }
+
+      button,
+      .enlace {
+        border: none;
+        border-radius: 7px;
+        padding: 12px 18px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      .btn-guardar {
+        background: #0f766e;
+        color: white;
+      }
+
+      .btn-guardar:hover {
+        background: #115e59;
+      }
+
+      .btn-volver {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
+
+      .mensaje {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      .tabla-contenedor {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 650px;
+      }
+
+      th,
+      td {
+        padding: 13px;
+        border-bottom: 1px solid #e5e7eb;
+        text-align: left;
+      }
+
+      th {
+        background: #ccfbf1;
+        color: #115e59;
+      }
+
+      .sin-datos {
+        text-align: center;
+        color: #64748b;
+        padding: 25px;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 12px;
+        }
+
+        .formulario {
+          grid-template-columns: 1fr;
+        }
+
+        .tarjeta {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="contenedor">
+      <header>
+        <h1>Gestión de médicos</h1>
+        <p>Registra y consulta los médicos del sistema de citas.</p>
+      </header>
+
+      <section class="tarjeta">
+        <h2>Registrar médico</h2>
+
+        <form id="formMedico">
+          <div class="formulario">
+            <div class="campo">
+              <label for="nombre">Nombre completo *</label>
+              <input type="text" id="nombre" required maxlength="100" />
+            </div>
+
+            <div class="campo">
+              <label for="documento">Documento *</label>
+              <input type="text" id="documento" required maxlength="20" />
+            </div>
+
+            <div class="campo">
+              <label for="correo">Correo electrónico *</label>
+              <input type="email" id="correo" required maxlength="100" />
+            </div>
+
+            <div class="campo">
+              <label for="telefono">Teléfono</label>
+              <input type="tel" id="telefono" maxlength="20" />
+            </div>
+
+            <div class="campo">
+              <label for="especialidad">Especialidad *</label>
+              <input
+                type="text"
+                id="especialidad"
+                required
+                maxlength="100"
+                placeholder="Ej. Medicina general"
+              />
+            </div>
+          </div>
+
+          <div class="botones">
+            <button type="submit" class="btn-guardar">Registrar médico</button>
+
+            <a href="index.html" class="enlace btn-volver">
+              Volver al inicio
+            </a>
+          </div>
+
+          <p id="mensaje" class="mensaje" role="status"></p>
+        </form>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Médicos registrados</h2>
+
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Documento</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Especialidad</th>
+              </tr>
+            </thead>
+
+            <tbody id="tablaMedicos">
+              <tr>
+                <td colspan="6" class="sin-datos">Cargando médicos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const formMedico = document.getElementById("formMedico");
+      const mensaje = document.getElementById("mensaje");
+      const tablaMedicos = document.getElementById("tablaMedicos");
+
+      // Consultar médicos en el backend
+      async function cargarMedicos() {
+        try {
+          const respuesta = await fetch("/api/medicos");
+          const medicos = await respuesta.json();
+
+          if (!respuesta.ok) {
+            throw new Error(
+              medicos.mensaje || "No se pudieron consultar los médicos",
+            );
+          }
+
+          tablaMedicos.innerHTML = "";
+
+          if (medicos.length === 0) {
+            tablaMedicos.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="sin-datos">
+                                Todavía no hay médicos registrados.
+                            </td>
+                        </tr>
+                    `;
+            return;
+          }
+
+          medicos.forEach(function (medico) {
+            const fila = document.createElement("tr");
+
+            // Crear celdas de forma segura
+            [
+              medico.id,
+              medico.nombre,
+              medico.documento,
+              medico.correo,
+              medico.telefono || "No registrado",
+              medico.especialidad,
+            ].forEach(function (valor) {
+              const celda = document.createElement("td");
+              celda.textContent = valor;
+              fila.appendChild(celda);
+            });
+
+            tablaMedicos.appendChild(fila);
+          });
+        } catch (error) {
+          tablaMedicos.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="sin-datos">
+                            Error al cargar los médicos.
+                        </td>
+                    </tr>
+                `;
+          console.error(error);
+        }
+      }
+
+      // Registrar un médico
+      formMedico.addEventListener("submit", async function (evento) {
+        evento.preventDefault();
+
+        const medico = {
+          nombre: document.getElementById("nombre").value.trim(),
+          documento: document.getElementById("documento").value.trim(),
+          correo: document.getElementById("correo").value.trim(),
+          telefono: document.getElementById("telefono").value.trim(),
+          especialidad: document.getElementById("especialidad").value.trim(),
+        };
+
+        mensaje.textContent = "Registrando médico...";
+        mensaje.style.color = "#0f766e";
+
+        try {
+          const respuesta = await fetch("/api/medicos", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(medico),
+          });
+
+          const datos = await respuesta.json();
+
+          if (!respuesta.ok) {
+            throw new Error(datos.mensaje || "No se pudo registrar el médico");
+          }
+
+          mensaje.textContent = datos.mensaje;
+          mensaje.style.color = "#15803d";
+
+          formMedico.reset();
+
+          await cargarMedicos();
+        } catch (error) {
+          mensaje.textContent = error.message;
+          mensaje.style.color = "#dc2626";
+        }
+      });
+
+      // Cargar la lista al abrir la página
+      cargarMedicos();
+    </script>
+  </body>
+</html>

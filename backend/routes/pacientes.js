@@ -74,4 +74,42 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Consultar pacientes para el formulario de citas
+router.get("/", (req, res) => {
+  const sql = `
+        SELECT id, nombre
+        FROM pacientes
+        ORDER BY nombre ASC
+    `;
+
+  db.query(sql, (error, resultados) => {
+    if (error) {
+      console.error("Error al consultar pacientes:", error);
+
+      return res.status(500).json({
+        mensaje: "Error al consultar los pacientes",
+      });
+    }
+
+    res.json(resultados);
+  });
+});
+
+// Consultar pacientes registrados
+router.get("/", (req, res) => {
+  const sql = "SELECT id, nombre FROM pacientes ORDER BY nombre ASC";
+
+  db.query(sql, (error, resultados) => {
+    if (error) {
+      console.error("Error al consultar pacientes:", error);
+
+      return res.status(500).json({
+        mensaje: "Error al consultar los pacientes",
+      });
+    }
+
+    res.json(resultados);
+  });
+});
+
 module.exports = router;

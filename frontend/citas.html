@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agendar citas médicas</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        background-color: #f0fdfa;
+        color: #1f2937;
+        padding: 30px 15px;
+      }
+
+      .contenedor {
+        max-width: 950px;
+        margin: 0 auto;
+      }
+
+      .encabezado {
+        background-color: #0f766e;
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .encabezado h1 {
+        margin-bottom: 10px;
+      }
+
+      .panel {
+        background-color: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+      }
+
+      .panel h2 {
+        color: #0f766e;
+        margin-bottom: 20px;
+      }
+
+      .formulario {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .campo {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+
+      .campo.completo {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 11px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        font-size: 15px;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 85px;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: 2px solid #99f6e4;
+        border-color: #0f766e;
+      }
+
+      .botones {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+      }
+
+      button,
+      .boton-volver {
+        background-color: #0f766e;
+        color: white;
+        border: none;
+        border-radius: 7px;
+        padding: 11px 18px;
+        font-size: 15px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      button:hover,
+      .boton-volver:hover {
+        background-color: #115e59;
+      }
+
+      .mensaje {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      .tabla-contenedor {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 700px;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      th {
+        background-color: #ccfbf1;
+        color: #115e59;
+      }
+
+      .estado {
+        font-weight: bold;
+        color: #0f766e;
+      }
+
+      @media (max-width: 600px) {
+        .formulario {
+          grid-template-columns: 1fr;
+        }
+
+        .campo.completo {
+          grid-column: auto;
+        }
+
+        .panel {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <main class="contenedor">
+      <header class="encabezado">
+        <h1>Agendamiento de citas médicas</h1>
+        <p>Programa y consulta las citas de los pacientes.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Registrar nueva cita</h2>
+
+        <form id="formCita">
+          <div class="formulario">
+            <div class="campo">
+              <label for="paciente_id">Paciente</label>
+              <select id="paciente_id" required>
+                <option value="">Cargando pacientes...</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="medico_id">Médico</label>
+              <select id="medico_id" required>
+                <option value="">Cargando médicos...</option>
+              </select>
+            </div>
+
+            <div class="campo">
+              <label for="fecha">Fecha de la cita</label>
+              <input type="date" id="fecha" required />
+            </div>
+
+            <div class="campo">
+              <label for="hora">Hora de la cita</label>
+              <input type="time" id="hora" required />
+            </div>
+
+            <div class="campo completo">
+              <label for="motivo">Motivo de la cita</label>
+              <textarea
+                id="motivo"
+                maxlength="255"
+                placeholder="Escribe el motivo de la consulta"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="botones">
+            <button type="submit">Agendar cita</button>
+            <a href="index.html" class="boton-volver">Volver al inicio</a>
+          </div>
+
+          <p id="mensaje" class="mensaje" role="status"></p>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Citas registradas</h2>
+
+        <div class="tabla-contenedor">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Paciente</th>
+                <th>Médico</th>
+                <th>Especialidad</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Motivo</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody id="tablaCitas">
+              <tr>
+                <td colspan="8">Cargando citas...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const formCita = document.getElementById("formCita");
+      const pacienteSelect = document.getElementById("paciente_id");
+      const medicoSelect = document.getElementById("medico_id");
+      const fechaInput = document.getElementById("fecha");
+      const horaInput = document.getElementById("hora");
+      const motivoInput = document.getElementById("motivo");
+      const mensaje = document.getElementById("mensaje");
+      const tablaCitas = document.getElementById("tablaCitas");
+
+      // Cargar pacientes para el formulario
+      async function cargarPacientes() {
+        try {
+          const respuesta = await fetch("/api/pacientes");
+
+          if (!respuesta.ok) {
+            throw new Error("No se pudieron consultar los pacientes");
+          }
+
+          const pacientes = await respuesta.json();
+
+          pacienteSelect.replaceChildren(
+            new Option("Selecciona un paciente", ""),
+          );
+
+          pacientes.forEach((paciente) => {
+            pacienteSelect.add(new Option(paciente.nombre, paciente.id));
+          });
+
+          if (pacientes.length === 0) {
+            pacienteSelect.replaceChildren(
+              new Option("No hay pacientes registrados", ""),
+            );
+          }
+        } catch (error) {
+          pacienteSelect.replaceChildren(
+            new Option("Error al cargar pacientes", ""),
+          );
+          console.error(error);
+        }
+      }
+
+      // Cargar médicos para el formulario
+      async function cargarMedicos() {
+        try {
+          const respuesta = await fetch("/api/medicos");
+
+          if (!respuesta.ok) {
+            throw new Error("No se pudieron consultar los médicos");
+          }
+
+          const medicos = await respuesta.json();
+
+          medicoSelect.replaceChildren(new Option("Selecciona un médico", ""));
+
+          medicos.forEach((medico) => {
+            medicoSelect.add(
+              new Option(
+                medico.nombre + " - " + medico.especialidad,
+                medico.id,
+              ),
+            );
+          });
+
+          if (medicos.length === 0) {
+            medicoSelect.replaceChildren(
+              new Option("No hay médicos registrados", ""),
+            );
+          }
+        } catch (error) {
+          medicoSelect.replaceChildren(
+            new Option("Error al cargar médicos", ""),
+          );
+          console.error(error);
+        }
+      }
+
+      // Consultar las citas registradas
+      async function cargarCitas() {
+        try {
+          const respuesta = await fetch("/api/citas");
+
+          if (!respuesta.ok) {
+            throw new Error("No se pudieron consultar las citas");
+          }
+
+          const citas = await respuesta.json();
+
+          tablaCitas.replaceChildren();
+
+          if (citas.length === 0) {
+            const fila = tablaCitas.insertRow();
+            const celda = fila.insertCell();
+
+            celda.colSpan = 8;
+            celda.textContent = "Todavía no hay citas registradas.";
+            return;
+          }
+
+          citas.forEach((cita) => {
+            const fila = tablaCitas.insertRow();
+
+            [
+              cita.id,
+              cita.paciente,
+              cita.medico,
+              cita.especialidad,
+              String(cita.fecha).slice(0, 10),
+              String(cita.hora).slice(0, 5),
+              cita.motivo || "Sin motivo",
+              cita.estado,
+            ].forEach((valor, indice) => {
+              const celda = fila.insertCell();
+              celda.textContent = valor;
+
+              if (indice === 7) {
+                celda.className = "estado";
+              }
+            });
+          });
+        } catch (error) {
+          tablaCitas.replaceChildren();
+
+          const fila = tablaCitas.insertRow();
+          const celda = fila.insertCell();
+
+          celda.colSpan = 8;
+          celda.textContent = "Error al cargar las citas.";
+
+          console.error(error);
+        }
+      }
+
+      // Registrar una nueva cita
+      formCita.addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+
+        mensaje.textContent = "Registrando cita...";
+
+        const datosCita = {
+          paciente_id: Number(pacienteSelect.value),
+          medico_id: Number(medicoSelect.value),
+          fecha: fechaInput.value,
+          hora: horaInput.value,
+          motivo: motivoInput.value.trim(),
+        };
+
+        try {
+          const respuesta = await fetch("/api/citas", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(datosCita),
+          });
+
+          const resultado = await respuesta.json();
+
+          if (!respuesta.ok) {
+            mensaje.textContent =
+              resultado.mensaje || "No se pudo registrar la cita";
+            return;
+          }
+
+          mensaje.textContent = resultado.mensaje;
+          formCita.reset();
+
+          await cargarCitas();
+        } catch (error) {
+          mensaje.textContent = "No se pudo conectar con el servidor.";
+
+          console.error(error);
+        }
+      });
+
+      // Evitar seleccionar una fecha anterior a hoy
+      const hoy = new Date();
+      const anio = hoy.getFullYear();
+      const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+      const dia = String(hoy.getDate()).padStart(2, "0");
+
+      fechaInput.min = anio + "-" + mes + "-" + dia;
+
+      // Cargar los datos al abrir la página
+      cargarPacientes();
+      cargarMedicos();
+      cargarCitas();
+    </script>
+  </body>
+</html>
+```

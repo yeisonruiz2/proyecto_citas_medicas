@@ -18,6 +18,12 @@ app.use("/api/pacientes", pacientesRoutes);
 const loginRoutes = require("./routes/login");
 app.use("/api/login", loginRoutes);
 
+const medicosRoutes = require("./routes/medicos");
+app.use("/api/medicos", medicosRoutes);
+
+const citasRoutes = require("./routes/citas");
+app.use("/api/citas", citasRoutes);
+
 // Puerto
 const PORT = process.env.PORT || 3000;
 
