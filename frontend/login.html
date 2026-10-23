@@ -231,6 +231,7 @@
           if (respuesta.ok) {
             // Guardar el nombre para mostrar el saludo
             sessionStorage.setItem("nombrePaciente", datos.paciente.nombre);
+            sessionStorage.setItem("token", datos.token);
 
             // Ir a la página principal
             window.location.href = "index.html";

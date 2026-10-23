@@ -22,7 +22,11 @@ const medicosRoutes = require("./routes/medicos");
 app.use("/api/medicos", medicosRoutes);
 
 const citasRoutes = require("./routes/citas");
-app.use("/api/citas", citasRoutes);
+const horariosRoutes = require("./routes/horarios");
+const verificarToken = require("./middleware/verificarToken");
+
+app.use("/api/citas", verificarToken, citasRoutes);
+app.use("/api/horarios", verificarToken, horariosRoutes);
 
 // Puerto
 const PORT = process.env.PORT || 3000;

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historial de citas médicas</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background: #f0fdfa;
+        color: #134e4a;
+      }
+
+      header {
+        background: #0f766e;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .panel {
+        max-width: 1100px;
+        margin: 25px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px #00000015;
+      }
+
+      .tabla-contenedor {
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #d1d5db;
+        text-align: left;
+      }
+
+      th {
+        background: #ccfbf1;
+      }
+
+      .estado {
+        font-weight: bold;
+      }
+
+      .Pendiente {
+        color: #b45309;
+      }
+
+      .Cancelada {
+        color: #dc2626;
+      }
+
+      .Atendida {
+        color: #15803d;
+      }
+
+      .btn {
+        display: inline-block;
+        margin: 5px 5px 5px 0;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        background: #0f766e;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .mensaje {
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Historial de citas médicas</h1>
+      <p>Consulta las citas registradas de tu cuenta</p>
+    </header>
+
+    <main class="panel">
+      <a href="index.html" class="btn">Volver al inicio</a>
+      <button class="btn" onclick="cargarHistorial()">Actualizar</button>
+
+      <p id="mensaje" class="mensaje">Cargando historial...</p>
+
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th>Médico</th>
+              <th>Especialidad</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Motivo</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHistorial"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      // Consultar las citas del paciente que inició sesión
+      async function cargarHistorial() {
+        const token = sessionStorage.getItem("token");
+        const mensaje = document.getElementById("mensaje");
+        const tabla = document.getElementById("tablaHistorial");
+
+        if (!token) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        mensaje.textContent = "Cargando historial...";
+        tabla.innerHTML = "";
+
+        try {
+          const respuesta = await fetch("/api/citas/historial", {
+            headers: {
+              Authorization: "Bearer " + token,
+            },
+          });
+
+          if (respuesta.status === 401 || respuesta.status === 403) {
+            sessionStorage.removeItem("token");
+            window.location.href = "login.html";
+            return;
+          }
+
+          const datos = await respuesta.json();
+
+          if (!respuesta.ok) {
+            throw new Error(
+              datos.mensaje || "No se pudo consultar el historial",
+            );
+          }
+
+          if (datos.length === 0) {
+            mensaje.textContent = "No tienes citas registradas.";
+            return;
+          }
+
+          datos.forEach((cita) => {
+            const fila = document.createElement("tr");
+
+            // Formatear la fecha para mostrarla
+            const fecha = new Date(cita.fecha).toLocaleDateString("es-CO", {
+              timeZone: "UTC",
+            });
+
+            fila.innerHTML = `
+            <td>${cita.medico}</td>
+            <td>${cita.especialidad}</td>
+            <td>${fecha}</td>
+            <td>${String(cita.hora).substring(0, 5)}</td>
+            <td>${cita.motivo || "No especificado"}</td>
+            <td class="estado ${cita.estado}">
+              ${cita.estado}
+            </td>
+          `;
+
+            tabla.appendChild(fila);
+          });
+
+          mensaje.textContent = "Citas encontradas: " + datos.length;
+        } catch (error) {
+          console.error(error);
+          mensaje.textContent =
+            "Error al cargar el historial. Intenta actualizar.";
+        }
+      }
+
+      // Cargar el historial al abrir la página
+      cargarHistorial();
+    </script>
+  </body>
+</html>

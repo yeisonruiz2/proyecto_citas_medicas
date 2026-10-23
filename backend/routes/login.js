@@ -2,10 +2,18 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/database");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // Iniciar sesión del paciente
 router.post("/", (req, res) => {
   const { correo, password } = req.body;
+
+  // Verificar que exista la clave secreta
+  if (!process.env.JWT_SECRET) {
+    return res.status(500).json({
+      mensaje: "Falta configurar la clave de seguridad del servidor",
+    });
+  }
 
   // Verificar que se ingresen los datos
   if (!correo || !password) {
@@ -16,10 +24,10 @@ router.post("/", (req, res) => {
 
   // Buscar al paciente por su correo
   const sql = `
-        SELECT id, nombre, correo, password
-        FROM pacientes
-        WHERE correo = ?
-    `;
+    SELECT id, nombre, correo, password
+    FROM pacientes
+    WHERE correo = ?
+  `;
 
   db.query(sql, [correo], async (error, resultados) => {
     if (error) {
@@ -42,11 +50,11 @@ router.post("/", (req, res) => {
     try {
       let contraseñaCorrecta = false;
 
-      // Verificar contraseñas que ya tienen hash
+      // Verificar la contraseña
       if (paciente.password.startsWith("$2")) {
         contraseñaCorrecta = await bcrypt.compare(password, paciente.password);
       } else {
-        // Compatibilidad temporal con registros antiguos
+        // Compatibilidad temporal con contraseñas antiguas
         contraseñaCorrecta = password === paciente.password;
       }
 
@@ -82,23 +90,41 @@ router.post("/", (req, res) => {
     } catch (error) {
       console.error(error);
 
-      res.status(500).json({
+      return res.status(500).json({
         mensaje: "Error al verificar la contraseña",
       });
     }
   });
 });
 
-// Enviar los datos del paciente sin incluir su contraseña
+// Crear el token y enviar los datos del paciente
 function responderLogin(res, paciente) {
-  res.status(200).json({
-    mensaje: "Inicio de sesión exitoso",
-    paciente: {
-      id: paciente.id,
-      nombre: paciente.nombre,
-      correo: paciente.correo,
-    },
-  });
+  try {
+    const token = jwt.sign(
+      {
+        id: paciente.id,
+        correo: paciente.correo,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "2h" },
+    );
+
+    res.status(200).json({
+      mensaje: "Inicio de sesión exitoso",
+      token: token,
+      paciente: {
+        id: paciente.id,
+        nombre: paciente.nombre,
+        correo: paciente.correo,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      mensaje: "No se pudo crear el token de seguridad",
+    });
+  }
 }
 
 module.exports = router;

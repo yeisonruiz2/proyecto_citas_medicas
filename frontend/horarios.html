@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Horarios médicos</title>
+
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        background: #f0fdfa;
+        color: #134e4a;
+      }
+
+      header {
+        padding: 20px;
+        text-align: center;
+        background: #0f766e;
+        color: white;
+        border-radius: 10px;
+      }
+
+      .panel {
+        max-width: 900px;
+        margin: 25px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px #00000015;
+      }
+
+      label {
+        display: block;
+        margin-top: 15px;
+        font-weight: bold;
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+      }
+
+      button,
+      .btn {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 11px 16px;
+        border: none;
+        border-radius: 6px;
+        background: #0f766e;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        padding: 10px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        background: #ccfbf1;
+      }
+
+      .tabla-contenedor {
+        overflow-x: auto;
+      }
+
+      #mensaje {
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header>
+      <h1>Horarios de los médicos</h1>
+      <p>Registra y consulta los horarios de atención</p>
+    </header>
+
+    <main class="panel">
+      <a href="index.html" class="btn">Volver al inicio</a>
+
+      <h2>Registrar horario</h2>
+
+      <form id="formHorario">
+        <label for="medico">Médico</label>
+        <select id="medico" required>
+          <option value="">Selecciona un médico</option>
+        </select>
+
+        <label for="dia">Día de atención</label>
+        <select id="dia" required>
+          <option value="">Selecciona un día</option>
+          <option>Lunes</option>
+          <option>Martes</option>
+          <option>Miercoles</option>
+          <option>Jueves</option>
+          <option>Viernes</option>
+          <option>Sabado</option>
+          <option>Domingo</option>
+        </select>
+
+        <label for="inicio">Hora de inicio</label>
+        <input type="time" id="inicio" required />
+
+        <label for="fin">Hora de finalización</label>
+        <input type="time" id="fin" required />
+
+        <button type="submit">Guardar horario</button>
+      </form>
+
+      <p id="mensaje"></p>
+
+      <h2>Horarios registrados</h2>
+
+      <div class="tabla-contenedor">
+        <table>
+          <thead>
+            <tr>
+              <th>Médico</th>
+              <th>Día</th>
+              <th>Hora de inicio</th>
+              <th>Hora final</th>
+            </tr>
+          </thead>
+          <tbody id="tablaHorarios"></tbody>
+        </table>
+      </div>
+    </main>
+
+    <script>
+      const token = sessionStorage.getItem("token");
+      const formulario = document.getElementById("formHorario");
+      const selectorMedico = document.getElementById("medico");
+      const mensaje = document.getElementById("mensaje");
+      const tabla = document.getElementById("tablaHorarios");
+
+      // Enviar el token para acceder a las rutas protegidas
+      function obtenerCabeceras() {
+        return {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        };
+      }
+
+      // Cargar la lista de médicos
+      async function cargarMedicos() {
+        try {
+          const respuesta = await fetch("/api/medicos", {
+            headers: obtenerCabeceras(),
+          });
+
+          const datos = await respuesta.json();
+
+          if (!respuesta.ok) {
+            throw new Error(
+              datos.mensaje || "No se pudieron consultar los médicos",
+            );
+          }
+
+          datos.forEach((medico) => {
+            const opcion = document.createElement("option");
+            opcion.value = medico.id;
+            opcion.textContent = medico.nombre;
+            selectorMedico.appendChild(opcion);
+          });
+        } catch (error) {
+          mensaje.textContent = "Error al cargar médicos: " + error.message;
+        }
+      }
+
+      // Consultar los horarios registrados
+      async function cargarHorarios() {
+        try {
+          const respuesta = await fetch("/api/horarios", {
+            headers: obtenerCabeceras(),
+          });
+
+          const datos = await respuesta.json();
+
+          if (!respuesta.ok) {
+            throw new Error(
+              datos.mensaje || "No se pudieron consultar los horarios",
+            );
+          }
+
+          tabla.innerHTML = "";
+
+          datos.forEach((horario) => {
+            const fila = document.createElement("tr");
+
+            fila.innerHTML = `
+            <td>${horario.medico}</td>
+            <td>${horario.dia_semana}</td>
+            <td>${String(horario.hora_inicio).substring(0, 5)}</td>
+            <td>${String(horario.hora_fin).substring(0, 5)}</td>
+          `;
+
+            tabla.appendChild(fila);
+          });
+
+          if (datos.length === 0) {
+            tabla.innerHTML = `
+            <tr>
+              <td colspan="4">Todavía no hay horarios registrados.</td>
+            </tr>
+          `;
+          }
+        } catch (error) {
+          mensaje.textContent = "Error al cargar horarios: " + error.message;
+        }
+      }
+
+      // Registrar un nuevo horario
+      formulario.addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+
+        const medico_id = selectorMedico.value;
+        const dia_semana = document.getElementById("dia").value;
+        const hora_inicio = document.getElementById("inicio").value;
+        const hora_fin = document.getElementById("fin").value;
+
+        if (hora_inicio >= hora_fin) {
+          mensaje.textContent =
+            "La hora de inicio debe ser anterior a la hora final.";
+          return;
+        }
+
+        try {
+          const respuesta = await fetch("/api/horarios", {
+            method: "POST",
+            headers: obtenerCabeceras(),
+            body: JSON.stringify({
+              medico_id,
+              dia_semana,
+              hora_inicio,
+              hora_fin,
+            }),
+          });
+
+          const resultado = await respuesta.json();
+          mensaje.textContent = resultado.mensaje;
+
+          if (respuesta.ok) {
+            formulario.reset();
+            await cargarHorarios();
+          }
+        } catch (error) {
+          mensaje.textContent = "No se pudo guardar el horario.";
+        }
+      });
+
+      // Verificar que haya una sesión iniciada
+      if (!token) {
+        window.location.href = "login.html";
+      } else {
+        cargarMedicos();
+        cargarHorarios();
+      }
+    </script>
+  </body>
+</html>

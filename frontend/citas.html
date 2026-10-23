@@ -20,7 +20,7 @@
       }
 
       .contenedor {
-        max-width: 950px;
+        max-width: 1100px;
         margin: 0 auto;
       }
 
@@ -118,6 +118,20 @@
         background-color: #115e59;
       }
 
+      .btn-cancelar {
+        background-color: #dc2626;
+        padding: 8px 12px;
+      }
+
+      .btn-cancelar:hover {
+        background-color: #b91c1c;
+      }
+
+      .btn-cancelar:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+      }
+
       .mensaje {
         margin-top: 15px;
         font-weight: bold;
@@ -130,7 +144,7 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 700px;
+        min-width: 850px;
       }
 
       th,
@@ -236,12 +250,13 @@
                 <th>Hora</th>
                 <th>Motivo</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
 
             <tbody id="tablaCitas">
               <tr>
-                <td colspan="8">Cargando citas...</td>
+                <td colspan="9">Cargando citas...</td>
               </tr>
             </tbody>
           </table>
@@ -258,6 +273,14 @@
       const motivoInput = document.getElementById("motivo");
       const mensaje = document.getElementById("mensaje");
       const tablaCitas = document.getElementById("tablaCitas");
+
+      // Obtener el token de la sesión
+      function obtenerCabeceras() {
+        return {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + sessionStorage.getItem("token"),
+        };
+      }
 
       // Cargar pacientes para el formulario
       async function cargarPacientes() {
@@ -329,7 +352,9 @@
       // Consultar las citas registradas
       async function cargarCitas() {
         try {
-          const respuesta = await fetch("/api/citas");
+          const respuesta = await fetch("/api/citas", {
+            headers: obtenerCabeceras(),
+          });
 
           if (!respuesta.ok) {
             throw new Error("No se pudieron consultar las citas");
@@ -343,7 +368,7 @@
             const fila = tablaCitas.insertRow();
             const celda = fila.insertCell();
 
-            celda.colSpan = 8;
+            celda.colSpan = 9;
             celda.textContent = "Todavía no hay citas registradas.";
             return;
           }
@@ -368,6 +393,38 @@
                 celda.className = "estado";
               }
             });
+
+            // Crear botón para cancelar la cita
+            const celdaAcciones = fila.insertCell();
+            const boton = document.createElement("button");
+
+            boton.type = "button";
+            boton.textContent = "Cancelar";
+            boton.className = "btn-cancelar";
+            boton.dataset.id = cita.id;
+
+            // Deshabilitar si ya está cancelada o atendida
+            if (cita.estado === "Cancelada" || cita.estado === "Atendida") {
+              boton.disabled = true;
+            }
+
+            celdaAcciones.appendChild(boton);
+
+            // Crear botón para reprogramar la cita
+            const botonReprogramar = document.createElement("button");
+
+            botonReprogramar.type = "button";
+            botonReprogramar.textContent = "Reprogramar";
+            botonReprogramar.className = "btn-reprogramar";
+            botonReprogramar.dataset.id = cita.id;
+            botonReprogramar.dataset.fecha = String(cita.fecha).slice(0, 10);
+            botonReprogramar.dataset.hora = String(cita.hora).slice(0, 5);
+
+            if (cita.estado !== "Pendiente") {
+              botonReprogramar.disabled = true;
+            }
+
+            celdaAcciones.appendChild(botonReprogramar);
           });
         } catch (error) {
           tablaCitas.replaceChildren();
@@ -375,7 +432,7 @@
           const fila = tablaCitas.insertRow();
           const celda = fila.insertCell();
 
-          celda.colSpan = 8;
+          celda.colSpan = 9;
           celda.textContent = "Error al cargar las citas.";
 
           console.error(error);
@@ -399,9 +456,7 @@
         try {
           const respuesta = await fetch("/api/citas", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: obtenerCabeceras(),
             body: JSON.stringify(datosCita),
           });
 
@@ -419,8 +474,92 @@
           await cargarCitas();
         } catch (error) {
           mensaje.textContent = "No se pudo conectar con el servidor.";
-
           console.error(error);
+        }
+      });
+
+      // Reprogramar una cita
+      tablaCitas.addEventListener("click", async (evento) => {
+        const boton = evento.target.closest(".btn-reprogramar");
+
+        if (!boton || boton.disabled) {
+          return;
+        }
+
+        const id = boton.dataset.id;
+        const fechaActual = boton.dataset.fecha;
+        const horaActual = boton.dataset.hora;
+
+        const nuevaFecha = prompt(
+          "Ingresa la nueva fecha (AAAA-MM-DD):",
+          fechaActual,
+        );
+
+        if (nuevaFecha === null || nuevaFecha.trim() === "") {
+          return;
+        }
+
+        const nuevaHora = prompt("Ingresa la nueva hora (HH:MM):", horaActual);
+
+        if (nuevaHora === null || nuevaHora.trim() === "") {
+          return;
+        }
+
+        try {
+          const respuesta = await fetch(`/api/citas/${id}/reprogramar`, {
+            method: "PUT",
+            headers: obtenerCabeceras(),
+            body: JSON.stringify({
+              fecha: nuevaFecha.trim(),
+              hora: nuevaHora.trim(),
+            }),
+          });
+
+          const resultado = await respuesta.json();
+          mensaje.textContent = resultado.mensaje;
+
+          await cargarCitas();
+        } catch (error) {
+          mensaje.textContent = "No se pudo conectar con el servidor.";
+          console.error(error);
+        }
+      });
+
+      // Cancelar una cita al pulsar el botón
+      tablaCitas.addEventListener("click", async (evento) => {
+        const boton = evento.target.closest(".btn-cancelar");
+
+        if (!boton || boton.disabled) {
+          return;
+        }
+
+        const id = boton.dataset.id;
+
+        if (!confirm("¿Seguro que deseas cancelar esta cita?")) {
+          return;
+        }
+
+        boton.disabled = true;
+        mensaje.textContent = "Cancelando cita...";
+
+        try {
+          const respuesta = await fetch(`/api/citas/${id}/cancelar`, {
+            method: "PUT",
+            headers: obtenerCabeceras(),
+          });
+
+          const resultado = await respuesta.json();
+          mensaje.textContent = resultado.mensaje;
+
+          if (respuesta.ok) {
+            await cargarCitas();
+          } else {
+            await cargarCitas();
+          }
+        } catch (error) {
+          mensaje.textContent = "No se pudo conectar con el servidor.";
+          console.error(error);
+          await cargarCitas();
         }
       });
 
@@ -439,4 +578,3 @@
     </script>
   </body>
 </html>
-```
